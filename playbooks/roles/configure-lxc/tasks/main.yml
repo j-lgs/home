@@ -14,12 +14,12 @@
 # Using a template would be messy too as these files have a lot of information that would be hard to pass into the template.
 # This hack is needed to make this playbook idempotent
 - name: Modify proxmox GPU container's LXC configuration
-  lineinfile:
-      path: /etc/pve/lxc/{{ hostvars[item[0]]['vmid'] }}.conf
-      line: "{{ item[1] }}"
+  ansible.builtin.lineinfile:
+    path: /etc/pve/lxc/{{ hostvars[item[0]]['vmid'] }}.conf
+    line: "{{ item[1] }}"
   with_nested:
-  - "{{ lxc_hosts }}"
-  - "{{ lxc_lines }}"
+    - "{{ lxc_hosts }}"
+    - "{{ lxc_lines }}"
   tags: lxc
 
 - name: Start LXC hosts
