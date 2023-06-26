@@ -1,10 +1,10 @@
 ---
 - name: Create files group
-  group:
+  ansible.builtin.group:
     name: files
     gid: "{{ file_gid }}"
 - name: Create files user
-  user:
+  ansible.builtin.user:
     name: files
     uid: "{{ file_uid }}"
     system: true
