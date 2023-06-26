@@ -1,0 +1,63 @@
+[global]
+   workgroup = WORKGROUP
+   log file = /var/log/samba/log.%m
+   max log size = 1000
+   logging = file syslog@1
+   panic action = /usr/share/samba/panic-action %d
+
+   server role = standalone server
+   obey pam restrictions = yes
+
+   vfs objects = virusfilter
+
+   virusfilter:socket path = /var/run/clamav/clamd.ctl
+   virusfilter:scanner = clamav
+   virusfilter:scan archive = true
+   virusfilter:scan on close = yes
+   virusfilter:infected file action = quarantine
+   virusfilter:quarantine keep tree = no
+   virusfilter:cache time limit = 120
+
+   unix password sync = yes
+   passwd program = /usr/bin/passwd %u
+   passwd chat = *Enter\snew\s*\spassword:* %n\n *Retype\snew\s*\spassword:* %n\n *password\supdated\ssuccessfully* .
+   pam password change = yes
+
+   map to guest = bad user
+
+   usershare allow guests = yes
+
+#======================= Share Definitions =======================
+
+[inbox]
+   comment = Torrent inbox directory
+   path = /mnt/download/inbox
+   browseable = yes
+   read only = yes
+   create mask = 0700
+   directory mask = 0700
+
+[anime]
+   comment = Anime archive directory
+   path = /mnt/media/anime
+   browseable = yes
+   read only = yes
+   create mask = 0700
+   directory mask = 0700
+   
+[movie]
+   comment = movie archive directory
+   path = /mnt/media/movie
+   browseable = yes
+   read only = yes
+   create mask = 0700
+   directory mask = 0700
+   
+[tv]
+   comment = TV archive directory
+   path = /mnt/media/tv
+   browseable = yes
+   read only = yes
+   create mask = 0700
+   directory mask = 0700
+

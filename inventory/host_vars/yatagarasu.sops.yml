@@ -1,0 +1,21 @@
+yatagarasu_samba_pass: ENC[AES256_GCM,data:JMBOgwgZWxKE2vbEo2w=,iv:i7wEPoRhUjBuu9etPWWfyJgVBrwFrbgMTKpILNJWJig=,tag:414BuoeM8apPcglZgYf3YQ==,type:str]
+sops:
+    kms: []
+    gcp_kms: []
+    azure_kv: []
+    hc_vault: []
+    age:
+        - recipient: age1cxn2ux6cahknpu4y84ss606wmufcx0p4uxuev4sxu4pdpzhxm9wsmh2jc5
+          enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSB3ejMzT3Y0N0JKbStiUzRC
+            NlpQMHZFSEV6UzB5MGttbU4rUG82TlN2bUNrCjhSNDBSTWVUNWJSUGMxQWdjbDFl
+            K0RpQTNleEZTbWlGcWdVUXU4Rm9mdkEKLS0tIDRnUVN2QTZ4eXNqZ3Nqa1lyZWJ4
+            cENMaW91ZDNrYTB6ZExsZlBkaG1ENm8KYVbNIF08jmSaj6kmzv2DkkgDvfbz7exA
+            lOegNLiaV8bb2P9oQrzKSwRpiYgvnsHgycYgCEFRNpRJN5u870nHtA==
+            -----END AGE ENCRYPTED FILE-----
+    lastmodified: "2023-06-25T05:39:30Z"
+    mac: ENC[AES256_GCM,data:wN+rJrk5s/rVhy5EeVYume5orEzmKYiFTZZEpZ4PzzXrJ+eK55YzqmpXdkBryb9CsMEBrQqU8LHfydaoS1w9CqGb28bx+G2qB0E5gS75omRWY7Egw5QzwDX2QJ2LzaZSwgE6fSo1T47u6gHYvbrE4/r6Cs6jXSRI2YAQOzDqvAU=,iv:5O48+mrlmNKa8Ivp1NK4u4V3A9fzxtgirKowdyr1iNM=,tag:c+a9+acJVKhmnhHkZ8xAUQ==,type:str]
+    pgp: []
+    unencrypted_suffix: _unencrypted
+    version: 3.7.3

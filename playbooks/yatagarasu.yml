@@ -1,0 +1,11 @@
+- hosts: yatagarasu
+  vars:
+    samba_user: "files"
+  roles:
+    - common
+    - samba
+  tasks:
+  - name: Set Samba password
+    command:
+      cmd: "echo '{{ yatagarasu_samba_pass }}' | smbpasswd -a {{ samba_user }} -s"
+    tags: samba,main

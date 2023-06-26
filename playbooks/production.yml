@@ -1,0 +1,5 @@
+---
+- import_playbook: chireiden.yml
+- import_playbook: oni.yml
+- import_playbook: yatagarasu.yml
+- import_playbook: tsukumogami.yml

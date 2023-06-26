@@ -1,0 +1,33 @@
+---
+# We start and stop the host to ensure nothing else has a lock on it.
+- name: Stop LXC hosts
+  community.general.proxmox:
+    vmid: "{{ hostvars[item]['vmid'] }}"
+    api_user: "{{ proxmox_api_user }}"
+    api_password: "{{ proxmox_api_password }}"
+    api_host: chireiden
+    state: stopped
+  loop: "{{ lxc_hosts }}"
+  tags: lxc
+
+# Markers cannot be used as proxmox moves all comments to the top. We will use a nested loop and create the lines one by one.
+# Using a template would be messy too as these files have a lot of information that would be hard to pass into the template.
+# This hack is needed to make this playbook idempotent
+- name: Modify proxmox GPU container's LXC configuration
+  lineinfile:
+      path: /etc/pve/lxc/{{ hostvars[item[0]]['vmid'] }}.conf
+      line: "{{ item[1] }}"
+  with_nested:
+  - "{{ lxc_hosts }}"
+  - "{{ lxc_lines }}"
+  tags: lxc
+
+- name: Start LXC hosts
+  community.general.proxmox:
+    vmid: "{{ hostvars[item]['vmid'] }}"
+    api_user: "{{ proxmox_api_user }}"
+    api_password: "{{ proxmox_api_password }}"
+    api_host: chireiden
+    state: started
+  loop: "{{ lxc_hosts }}"
+  tags: lxc

@@ -1,0 +1,49 @@
+---
+- name: Ensure samba, clamav and wsdd are installed
+  apt:
+    name: "{{ item }}"
+    state: present
+  tags: samba
+  loop:
+  - samba
+  - samba-client
+  - wsdd
+  - ufw
+  - clamav
+
+- name: configure samba
+  template:
+    src: smb.conf.j2
+    dest: /etc/samba/smb.conf
+    validate: /usr/bin/testparm -s %s
+  notify:
+  - restart smbd
+  tags: samba
+
+-   name: copy over wsdd ufw configuration
+    copy:
+        src: wsdd
+        dest: /etc/ufw/applications.d/wsdd
+    tags: smaba
+
+-   name: ufw open smb and wsdd
+    community.general.ufw:
+        rule: allow
+        name: "{{ item }}"
+    loop:
+    - samba
+    - wsdd
+    - OpenSSH
+    tags: samba
+
+-   name: make sure samba is running
+    service:
+        name: "{{ item }}"
+        state: started
+        enabled: yes
+    loop:
+    - smb
+    - smbd
+    - wsdd
+    tags: samba
+

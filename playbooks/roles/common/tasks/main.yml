@@ -1,0 +1,10 @@
+---
+- name: Create files group
+  group:
+    name: files
+    gid: "{{ file_gid }}"
+- name: Create files user
+  user:
+    name: files
+    uid: "{{ file_uid }}"
+    system: true
