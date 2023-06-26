@@ -1,20 +1,25 @@
-- hosts: tsukumogami
+- name: Playbook for configuring our Roon and Music server (tsukumogami)
+  hosts: tsukumogami
   roles:
     - common
   tasks:
-  - name: Get Roon dependencies
-    apt:
-      pkg:
-      - ffmpeg
-      - libasound2
-      - cifs-utils
-  - name: Download Roon
-    get_url:
-      url: "https://download.roonlabs.net/builds/roonserver-installer-linuxx64.sh"
-      dest: /tmp/roonserver-installer-linuxx64.sh
-      mode: 0700
-  - name: install roon 
-    shell:
-      cmd: yes | /tmp/roonserver-installer-linuxx64.sh
-      creates: /opt/RoonServer
-    tags: roon-install
+    - name: Get Roon dependencies
+      ansible.builtin.apt:
+        pkg:
+          - ffmpeg
+          - libasound2
+          - cifs-utils
+      tags: roon
+    - name: Download Roon
+      ansible.builtin.get_url:
+        url: "https://download.roonlabs.net/builds/roonserver-installer-linuxx64.sh"
+        dest: /tmp/roonserver-installer-linuxx64.sh
+        mode: "0700"
+      tags: roon
+    - name: Install Roon
+      ansible.builtin.shell:
+        cmd: set -e -o pipefail && yes | /tmp/roonserver-installer-linuxx64.sh
+        creates: /opt/RoonServer
+      args:
+        executable: /bin/bash
+      tags: roon,install
