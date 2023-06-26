@@ -1,4 +1,5 @@
-- hosts: oni
+- name: Playbook for our production Docker host (oni).
+  hosts: oni
   roles:
     - common
   vars:
@@ -16,198 +17,197 @@
 
     timezone: "Australia/Melbourne"
   tasks:
-  - name: Setup docker repo, install https
-    apt:
-      pkg:
-      - ca-certificates
-      - curl 
-      - gnupg
-  - name: Add docker apt key
-    block:
-    - name: docker | Add key
-      apt_key:
-        id: 8D81803C0EBFCD88
-        file: https://download.docker.com/linux/debian/gpg
-        state: present
-    - name: docker | Add repository
-      apt_repository:
-        repo: "deb https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable"
-        state: present
-  - name: Install Docker
-    apt:
-      update_cache: yes
-      state: latest
-      pkg:
-      - docker-ce
-      - docker-ce-cli
-      - containerd.io
-      - docker-buildx-plugin
-      - docker-compose-plugin
-  - name: Spin up docker containers
-    block:
-    # TODO: Create data volumes in a loop
-    - name: Create docker data volumes
-      community.docker.docker_volume:
-        name: "{{ item }}"
-      loop:
-      - "config-lanragi"
-      - "thumbnails-lanragi"
-      - "config-homeassistant"
-      - "config-vaultwarden"
-      - "config-gitlab"
-      - "logs-gitlab"
-      - "opt-gitlab"
-      - "config-shoko"
-      - "config-beets"
-      - "config-betanin"
-      - "database-betanin"
-      - "config-komga"
-      - "config-kanboard"
-      tags: container, volumes
-    - name: Set correct permissions in container volumes
-      community.docker.docker_container:
-        name: set-volume-{{ item.name }}-permissions
-        image: busybox
-        command: chown -R {{ file_uid }}:{{ file_gid }} {{ item.dir }}
-        state: started
-        mounts:
-        - source: "{{ item.name }}"
-          target: "{{ item.dir }}"
-      loop:
-      - { name: "thumbnails-lanragi", dir: "/home/koyomi/lanraragi/thumbnails" }
-      - { name: "config-komga",       dir: "/config"}
-      tags: container, volumes
-    - name: Create home assistant docker container
-      community.docker.docker_container:
-        name: homeassistant
-        hostname: homeassistant
-        image: homeassistant/home-assistant:stable
-        state: started
-        recreate: true
-        ports:
-        - "{{ homeassistant_port }}:8123"
-        env:
-          TZ: "{{ timezone }}"
-        mounts:
-        - source: config-homeassistant
-          target: /configs
-      tags: container,homeassistant
-    - name: Create lanragi docker container
-      community.docker.docker_container:
-        name: lanragi-artbooks
-        hostname: lanragi-artbooks
-        image: difegue/lanraragi:v.0.8.90
-        state: started
-        recreate: true
-        ports:
-        - "{{ lanragi_port }}:3000"
-        env:
-          LRR_UID: "{{ file_uid }}"
-          LRR_GID: "{{ file_gid }}"
-          LRR_THUMB_DIRECTORY: "/home/koyomi/lanraragi/thumbnails"
-        mounts:
-        - type: bind
-          read_only: true
-          source: /mnt/download/inbox/artbook
-          target: /home/koyomi/lanraragi/content
-        - source: config-lanragi
-          target: /home/koyomi/lanraragi/database
-        - source: thumbnails-lanragi
-          target: /home/koyomi/lanraragi/thumbnails
-      tags: container, lanragi
-    - name: Create betanin docker container
-      community.docker.docker_container:
-        name: betanin
-        hostname: betanin
-        image: sentriz/betanin:v0.4.0
-        state: started
-        recreate: true
-        ports:
-        - "{{ betanin_http }}:9393"
-        env:
-          UID: "{{ file_uid }}"
-          GID: "{{ file_gid }}"
-        mounts:
-        - source: database-betanin
-          target: /root/.local/share/betanin
-        - source: config-betanin
-          target: /root/.config/betanin
-        - source: config-beets
-          target: /root/.config/beets
-        - type: bind
-          read_only: true
-          source: /mnt/download/inbox
-          target: /downloads
-        - type: bind
-          source: /mnt/media/music
-          target: /music
-      tags: container, betanin
-    - name: Create komga docker container
-      community.docker.docker_container:
-        name: komga
-        image: gotson/komga:0.165.0
-        state: started
-        recreate: true
-        ports:
-        - "{{ komga_http }}:8080"
-        user: "{{ file_uid }}:{{ file_gid }}"
-        env:
-          TZ: "{{ timezone }}"
-        mounts  :
-        - source: config-komga
-          target: /config
-        - type: bind
-          read_only: true
-          source: /mnt/download/inbox/manga
-          target: /data
-      tags: container, komga
-    - name: Create shokoanime docker container
-      community.docker.docker_container:
-        name: shokoserver
-        image: shokoanime/server:v4.2.2
-        state: started
-        recreate: true
-        ports:
-        - "{{ shoko_http }}:8111"
-        env:
-          TZ:   "{{ timezone }}"
-          PUID: "{{ file_uid }}"
-          PGID: "{{ file_gid }}"
-          AVDUMP_MONO: "true"
-        mounts:
-        - source: config-shoko
-          target: /home/shoko/.shoko 
-        - type: bind
-          read_only: true
-          source: /mnt/download/inbox/anime
-          target: /mnt/download/inbox/anime
-      tags: container, shoko
-    - name: Create vaultwarden docker container
-      community.docker.docker_container:
-        name: vaultwarden
-        image: vaultwarden/server:1.28.1
-        state: started
-        recreate: true
-        ports:
-        - "{{ vaultwarden_http }}:80"
-        mounts:
-        - source: config-vaultwarden
-          target: /data
-      tags: container,vaultwarden
-    - name: Create kanboard docker container
-      community.docker.docker_container:
-        name: kanboard
-        image: kanboard/kanboard:v1.2.30
-        state: started
-        recreate: true
-        ports:
-        - "{{ kanboard_http }}:80"
-        env:
-          TZ: "{{ timezone }}"
-          PLUGIN_INSTALLER: "true"
-        mounts:
-        - source: config-kanboard
-          target: /var/www/app/plugins
-        - source: config-kanboard
-          target: /var/www/app/data
-      tags: container,kanboard
+    - name: Setup docker repo, install https certificates
+      ansible.builtin.apt:
+        pkg:
+          - ca-certificates
+          - curl
+          - gnupg
+    - name: Add docker apt key
+      block:
+        - name: Docker | Add key
+          ansible.builtin.apt_key:
+            id: 8D81803C0EBFCD88
+            file: https://download.docker.com/linux/debian/gpg
+            state: present
+        - name: Docker | Add repository
+          ansible.builtin.apt_repository:
+            repo: "deb https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable"
+            state: present
+    - name: Install Docker
+      ansible.builtin.apt:
+        update_cache: true
+        pkg:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+    - name: Spin up docker containers
+      block:
+      # TODO: Create data volumes in a loop
+        - name: Create docker data volumes
+          community.docker.docker_volume:
+            name: "{{ item }}"
+          loop:
+            - "config-lanragi"
+            - "thumbnails-lanragi"
+            - "config-homeassistant"
+            - "config-vaultwarden"
+            - "config-gitlab"
+            - "logs-gitlab"
+            - "opt-gitlab"
+            - "config-shoko"
+            - "config-beets"
+            - "config-betanin"
+            - "database-betanin"
+            - "config-komga"
+            - "config-kanboard"
+          tags: container, volumes
+        - name: Set correct permissions in container volumes
+          community.docker.docker_container:
+            name: set-volume-{{ item.name }}-permissions
+            image: busybox
+            command: chown -R {{ file_uid }}:{{ file_gid }} {{ item.dir }}
+            state: started
+            mounts:
+              - source: "{{ item.name }}"
+                target: "{{ item.dir }}"
+          loop:
+            - { name: "thumbnails-lanragi", dir: "/home/koyomi/lanraragi/thumbnails" }
+            - { name: "config-komga", dir: "/config"}
+          tags: container, volumes
+        - name: Create home assistant docker container
+          community.docker.docker_container:
+            name: homeassistant
+            hostname: homeassistant
+            image: homeassistant/home-assistant:stable
+            state: started
+            recreate: true
+            ports:
+              - "{{ homeassistant_port }}:8123"
+            env:
+              TZ: "{{ timezone }}"
+            mounts:
+              - source: config-homeassistant
+                target: /configs
+          tags: container,homeassistant
+        - name: Create lanragi docker container
+          community.docker.docker_container:
+            name: lanragi-artbooks
+            hostname: lanragi-artbooks
+            image: difegue/lanraragi:v.0.8.90
+            state: started
+            recreate: true
+            ports:
+              - "{{ lanragi_port }}:3000"
+            env:
+              LRR_UID: "{{ file_uid }}"
+              LRR_GID: "{{ file_gid }}"
+              LRR_THUMB_DIRECTORY: "/home/koyomi/lanraragi/thumbnails"
+            mounts:
+              - type: bind
+                read_only: true
+                source: /mnt/download/inbox/artbook
+                target: /home/koyomi/lanraragi/content
+              - source: config-lanragi
+                target: /home/koyomi/lanraragi/database
+              - source: thumbnails-lanragi
+                target: /home/koyomi/lanraragi/thumbnails
+          tags: container, lanragi
+        - name: Create betanin docker container
+          community.docker.docker_container:
+            name: betanin
+            hostname: betanin
+            image: sentriz/betanin:v0.4.0
+            state: started
+            recreate: true
+            ports:
+              - "{{ betanin_http }}:9393"
+            env:
+              UID: "{{ file_uid }}"
+              GID: "{{ file_gid }}"
+            mounts:
+              - source: database-betanin
+                target: /root/.local/share/betanin
+              - source: config-betanin
+                target: /root/.config/betanin
+              - source: config-beets
+                target: /root/.config/beets
+              - type: bind
+                read_only: true
+                source: /mnt/download/inbox
+                target: /downloads
+              - type: bind
+                source: /mnt/media/music
+                target: /music
+          tags: container, betanin
+        - name: Create komga docker container
+          community.docker.docker_container:
+            name: komga
+            image: gotson/komga:0.165.0
+            state: started
+            recreate: true
+            ports:
+              - "{{ komga_http }}:8080"
+            user: "{{ file_uid }}:{{ file_gid }}"
+            env:
+              TZ: "{{ timezone }}"
+            mounts:
+              - source: config-komga
+                target: /config
+              - type: bind
+                read_only: true
+                source: /mnt/download/inbox/manga
+                target: /data
+          tags: container, komga
+        - name: Create shokoanime docker container
+          community.docker.docker_container:
+            name: shokoserver
+            image: shokoanime/server:v4.2.2
+            state: started
+            recreate: true
+            ports:
+              - "{{ shoko_http }}:8111"
+            env:
+              TZ: "{{ timezone }}"
+              PUID: "{{ file_uid }}"
+              PGID: "{{ file_gid }}"
+              AVDUMP_MONO: "true"
+            mounts:
+              - source: config-shoko
+                target: /home/shoko/.shoko
+              - type: bind
+                read_only: true
+                source: /mnt/download/inbox/anime
+                target: /mnt/download/inbox/anime
+          tags: container, shoko
+        - name: Create vaultwarden docker container
+          community.docker.docker_container:
+            name: vaultwarden
+            image: vaultwarden/server:1.28.1
+            state: started
+            recreate: true
+            ports:
+              - "{{ vaultwarden_http }}:80"
+            mounts:
+              - source: config-vaultwarden
+                target: /data
+          tags: container,vaultwarden
+        - name: Create kanboard docker container
+          community.docker.docker_container:
+            name: kanboard
+            image: kanboard/kanboard:v1.2.30
+            state: started
+            recreate: true
+            ports:
+              - "{{ kanboard_http }}:80"
+            env:
+              TZ: "{{ timezone }}"
+              PLUGIN_INSTALLER: "true"
+            mounts:
+              - source: config-kanboard
+                target: /var/www/app/plugins
+              - source: config-kanboard
+                target: /var/www/app/data
+          tags: container,kanboard
