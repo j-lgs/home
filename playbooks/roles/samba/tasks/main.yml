@@ -1,49 +1,50 @@
 ---
-- name: Ensure samba, clamav and wsdd are installed
-  apt:
+- name: Ensure Samba, UFW, clamav and WSDD are installed
+  ansible.builtin.apt:
     name: "{{ item }}"
+    pkg:
+      - samba
+      - samba-client
+      - wsdd
+      - ufw
+      - clamav
     state: present
   tags: samba
-  loop:
-  - samba
-  - samba-client
-  - wsdd
-  - ufw
-  - clamav
 
-- name: configure samba
-  template:
+- name: Csonfigure Samba
+  ansible.builtin.template:
     src: smb.conf.j2
     dest: /etc/samba/smb.conf
     validate: /usr/bin/testparm -s %s
+    mode: "0600"
   notify:
-  - restart smbd
+    - Restart smbd
   tags: samba
 
--   name: copy over wsdd ufw configuration
-    copy:
-        src: wsdd
-        dest: /etc/ufw/applications.d/wsdd
-    tags: smaba
+- name: Copy over WSDD UFW configuration
+  ansible.builtin.copy:
+    src: wsdd
+    dest: /etc/ufw/applications.d/wsdd
+    mode: "0600"
+  tags: smaba
 
--   name: ufw open smb and wsdd
-    community.general.ufw:
-        rule: allow
-        name: "{{ item }}"
-    loop:
+- name: UFW open SMB and WSDD
+  community.general.ufw:
+    rule: allow
+    name: "{{ item }}"
+  loop:
     - samba
     - wsdd
     - OpenSSH
-    tags: samba
+  tags: samba
 
--   name: make sure samba is running
-    service:
-        name: "{{ item }}"
-        state: started
-        enabled: yes
-    loop:
+- name: Ensure Samba is running
+  ansible.builtin.service:
+    name: "{{ item }}"
+    state: started
+    enabled: true
+  loop:
     - smb
     - smbd
     - wsdd
-    tags: samba
-
+  tags: samba

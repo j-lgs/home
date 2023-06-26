@@ -1,5 +1,5 @@
 ---
--   name: restart smbd
-    service:
-        name: smbd
-        state: restarted
+- name: Restart smbd
+  ansible.builtin.service:
+    name: smbd
+    state: restarted
