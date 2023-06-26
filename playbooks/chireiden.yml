@@ -1,4 +1,5 @@
-- hosts: chireiden
+- Name: Playbook for configuring Proxmox host (chireiden) with correct setting for its LXC containers
+  hosts: chireiden
   tasks:
   - name: Configure file access idmaps in LXC configuration
     include_role:
