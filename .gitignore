@@ -7,5 +7,5 @@ terraform.tfstate
 terraform.tfstate.backup
 .terraform.lock.hcl
 .sops.yaml
-terraform-secrets-enc.yaml
+terraform-secrets.yaml
 inventory/prod
