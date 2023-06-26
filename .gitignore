@@ -1,0 +1,11 @@
+collections
+inventory/group_secrets
+inventory/host_secrets
+.terraform
+.vscode
+terraform.tfstate
+terraform.tfstate.backup
+.terraform.lock.hcl
+.sops.yaml
+terraform-secrets-enc.yaml
+inventory/prod
