@@ -1,3 +1,11 @@
 collections:
-  - name: git+https://github.com/ansible-collections/community.sops
-    version: main
+  - name: community.sops
+    version: 1.6.2
+  - name: ansible.posix
+    version: 1.5.2
+  - name: community.general
+    version: 6.6.0
+  - name: community.docker # Only required if you plan to use Molecule (see below)
+    version: 3.4.5
+  - name: nginxinc.nginx_core
+    version: 0.8.0
