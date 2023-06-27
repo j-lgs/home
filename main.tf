@@ -348,6 +348,9 @@ resource "proxmox_lxc" "satori" {
   ostype       = "debian"
   unprivileged = true
 
+  nameserver   = var.net_dns
+  searchdomain = "lan"
+
   description = <<-EOT
     Reverse proxy and wireguard connection host.
   EOT
@@ -375,8 +378,10 @@ resource "proxmox_lxc" "satori" {
   network {
     name   = "eth0"
     bridge = "vmbr0"
-    ip     = "dhcp"
-    ip6    = "dhcp"
+    gw     = var.ip4_gateway
+    ip     = "10.0.0.20/24"
+    gw6    = var.ip6_gateway
+    ip6    = "2404:e80:6423:1000::1000:601/64"
   }
 }
 
@@ -389,6 +394,9 @@ resource "proxmox_lxc" "tsukumogami" {
   
   ostype       = "debian"
   unprivileged = false
+
+  nameserver   = var.net_dns
+  searchdomain = "lan"
 
   description = <<-EOT
     Roon and navidrome host.
