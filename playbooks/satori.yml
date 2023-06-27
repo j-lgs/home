@@ -1,0 +1,94 @@
+---
+- name: Playbook for configuring our SSL termination reverse proxy.
+  hosts: satori
+  vars:
+    net_host: "trash-hosting.com"
+  tasks:
+    - name: Install nginx
+      ansible.builtin.apt:
+        pkg:
+          - nginx
+          - certbot
+          - python3-certbot-nginx
+          - ca-certificates
+
+    - name: Setup certbot
+      ansible.builtin.shell: |
+        certbot -n register --agree-tos --email {{ le_email }}
+        touch /etc/letsencrypt/.registered
+      args:
+        creates: /etc/letsencrypt/.registered
+      tags: nginx, certbot
+
+    #- name: Install options-ssl-nginx.conf
+    #  debug: a
+
+    - name: Create letsencrypt directories
+      ansible.builtin.file:
+        path: "/etc/letsencrypt/{{ item }}"
+        state: directory
+        owner: root
+        group: root
+        mode: u=rwx,g=x,o=x
+      loop:
+        - live
+
+    - name: Create renewal job for certbot
+      ansible.builtin.cron:
+        name: certbot-renewal
+        job: "/bin/bash -lc '/usr/bin/certbot -q renew'"
+        minute: "0"
+        hour: "14"
+      tags: nginx, certbot
+
+    - name: Configure sites
+      ansible.builtin.template:
+        src: lan_site.j2
+        dest: "/etc/nginx/sites-enabled/{{ item.key }}"
+        mode: "0600"
+      vars:
+        service_name: "{{ item.key }}"
+        proxy_host: "{{ item.value.host }}"
+        proxy_port: "{{ item.value.port }}"
+        custom_server_conf: ""
+      loop: "{{ services | dict2items }}"
+      notify:
+        - Restart nginx
+      tags: nginx
+
+    - name: Stop nginx
+      ansible.builtin.service:
+        name: nginx
+        state: stopped
+
+    - name: Get https site certificate
+      ansible.builtin.command: '/usr/bin/certbot -n --nginx certonly -d {{ item.key }}.{{ net_host }}'
+      args:
+        creates: '/etc/letsencrypt/live/{{ item.key }}.{{ net_host }}'
+      loop: "{{ remote_services | dict2items }}"
+      tags: nginx, certbot
+
+    - name: Configure nginx sites
+      block:
+        - name: Configure https sites
+          ansible.builtin.template:
+            src: net_site.j2
+            dest: "/etc/nginx/sites-enabled/ssl-{{ item.key }}"
+            mode: "0600"
+          vars:
+            public_ip6: "2404:e80:6423:1000::1000:601"
+            public_ip: "0.0.0.0"
+            service_name: "{{ item.key }}"
+            proxy_host: "{{ item.value.host }}"
+            proxy_port: "{{ item.value.port }}"
+            host: "{{ net_host }}"
+          loop: "{{ remote_services | dict2items }}"
+          notify:
+            - Restart nginx
+          tags: nginx
+
+  handlers:
+    - name: Restart nginx
+      ansible.builtin.service:
+        name: nginx
+        state: restarted
