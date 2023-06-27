@@ -1,2 +1,25 @@
 ---
 ansible_user: root
+services:
+  lanragi_artbooks:
+    host: "oni.lan"
+    port: 8000
+  homeassistant:
+    host: "oni.lan"
+    port: 8001
+  shoko:
+    host: "oni.lan"
+    port: 8004
+  betanin:
+    host: "oni.lan"
+    port: 8005
+  komga:
+    host: "oni.lan"
+    port: 8006
+  kanboard:
+    host: "oni.lan"
+    port: 8008
+remote_services:
+  kanboard:
+    host: "oni.lan"
+    port: 8008
