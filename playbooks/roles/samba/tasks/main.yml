@@ -11,7 +11,7 @@
     state: present
   tags: samba
 
-- name: Csonfigure Samba
+- name: Configure Samba
   ansible.builtin.template:
     src: smb.conf.j2
     dest: /etc/samba/smb.conf
