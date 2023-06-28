@@ -93,8 +93,8 @@
             ports:
               - "{{ services.lanragi_artbooks.port }}:3000"
             env:
-              LRR_UID: "{{ file_uid }}"
-              LRR_GID: "{{ file_gid }}"
+              LRR_UID: "{{ file_uid | int }}"
+              LRR_GID: "{{ file_gid | int }}"
               LRR_THUMB_DIRECTORY: "/home/koyomi/lanraragi/thumbnails"
             mounts:
               - type: bind
@@ -116,8 +116,8 @@
             ports:
               - "{{ services.betanin.port }}:9393"
             env:
-              UID: "{{ file_uid }}"
-              GID: "{{ file_gid }}"
+              UID: "{{ file_uid | int }}"
+              GID: "{{ file_gid | int }}"
             mounts:
               - source: database-betanin
                 target: /root/.local/share/betanin
@@ -162,8 +162,8 @@
               - "{{ services.shoko.port }}:8111"
             env:
               TZ: "{{ timezone }}"
-              PUID: "{{ file_uid }}"
-              PGID: "{{ file_gid }}"
+              PUID: "{{ file_uid | int }}"
+              PGID: "{{ file_gid | int }}"
               AVDUMP_MONO: "true"
             mounts:
               - source: config-shoko
