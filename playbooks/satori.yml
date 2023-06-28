@@ -47,6 +47,8 @@
         dest: "/etc/nginx/sites-enabled/{{ item.key }}"
         mode: "0600"
       vars:
+        public_ip6: "2404:e80:6423:1000::1000:601"
+        public_ip: "10.0.0.20"
         service_name: "{{ item.key }}"
         proxy_host: "{{ item.value.host }}"
         proxy_port: "{{ item.value.port }}"
@@ -77,7 +79,7 @@
             mode: "0600"
           vars:
             public_ip6: "2404:e80:6423:1000::1000:601"
-            public_ip: "0.0.0.0"
+            public_ip: "10.0.0.25"
             service_name: "{{ item.key }}"
             proxy_host: "{{ item.value.host }}"
             proxy_port: "{{ item.value.port }}"
@@ -86,6 +88,53 @@
           notify:
             - Restart nginx
           tags: nginx
+
+        - name: Configure default site
+          ansible.builtin.template:
+            src: default.j2
+            dest: "/etc/nginx/sites-enabled/default"
+            mode: "0600"
+          vars:
+            public_ip6: "2404:e80:6423:1000::1000:601"
+            public_ip: "0.0.0.0"
+            host: "{{ net_host }}"
+          notify:
+            - Restart nginx
+          tags: nginx
+
+    - name: Get vaultwarden https site certificate
+      ansible.builtin.command: '/usr/bin/certbot -n --nginx certonly -d passwords.{{ net_host }}'
+      args:
+        creates: '/etc/letsencrypt/live/passwords.{{ net_host }}'
+      tags: nginx, certbot, vaultwarden
+
+    - name: Configure vaultwarden
+      block:
+  #      - name: Create vaultwarden htpasswd
+  #        ansible.builtin.command:
+  #          htpasswd -b -c "{{ vaultwarden.htpasswd }}" admin "{{ vw_admin_basic_pass }}"
+  #        args:
+  #          creates: "{{ vw_admin_basic_pass }}"
+  #        notify:
+  #          - Restart nginx
+
+        - name: Configure https sites
+          ansible.builtin.template:
+            src: vaultwarden.j2
+            dest: "/etc/nginx/sites-enabled/ssl-vaultwarden"
+            mode: "0600"
+          vars:
+            public_ip6: "2404:e80:6423:1000::1000:601"
+            public_ip: "10.0.0.20"
+            service_name: "passwords"
+            proxy_host: "{{ vaultwarden.host }}"
+            proxy_port: "{{ vaultwarden.port }}"
+            vw_ws_port: "{{ vaultwarden.ws_port }}"
+            vw_htpasswd: "{{ vaultwarden.htpasswd }}"
+            host: "{{ net_host }}"
+          notify:
+            - Restart nginx
+          tags: nginx, vaultwarden
 
   handlers:
     - name: Restart nginx

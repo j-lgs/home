@@ -23,3 +23,9 @@ remote_services:
   kanboard:
     host: "oni.lan"
     port: 8008
+
+vaultwarden:
+  host: "oni.lan"
+  port: 8007
+  ws_port: 3012
+  htpasswd: "/root/.vaultwarden-htpasswd"

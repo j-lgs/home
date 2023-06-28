@@ -180,7 +180,14 @@
             state: started
             recreate: true
             ports:
-              - "{{ services.vaultwarden.port }}:80"
+              - "{{ vaultwarden.port }}:80"
+            env:
+              ADMIN_TOKEN: "{{ vw_admin }}"
+              ROCKET_ADDRESS: "0.0.0.0"
+              ROCKET_PORT: "80"
+              SIGNUPS_ALLOWED: "false"
+              WEBSOCKET_ENABLED: "true"
+              DOMAIN_ORIGIN: "https://vaultwarden.trash-hosting.com"
             mounts:
               - source: config-vaultwarden
                 target: /data

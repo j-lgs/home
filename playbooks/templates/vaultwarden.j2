@@ -5,7 +5,6 @@ server {
     access_log /var/log/nginx/{{ service_name }}.{{ ansible_facts['hostname'] }}.lan.access.log;
 
     listen [{{ public_ip6 }}]:443 ssl http2;
-    listen {{ public_ip }}:443 ssl http2;
 
     ssl_certificate /etc/letsencrypt/live/{{ service_name }}.{{ host }}/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/{{ service_name }}.{{ host }}/privkey.pem;
@@ -18,6 +17,36 @@ server {
         rewrite ^/(.*)  $1;
         return 200 "User-agent: *\nDisallow: /";
     }
+
+    location /admin {
+        deny all;
+    }
+
+    location /notifications/hub {
+        proxy_set_header Host $host;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_pass http://{{ proxy_host }}:{{ vw_ws_port }};
+    }
+
+    location / {
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_pass http://{{ proxy_host }}:{{ proxy_port }};
+    }   
+}
+
+server {
+    listen [{{ public_ip6 }}]:80;
+    listen {{ public_ip }}:80;
+
+    server_name {{ service_name }}.{{ ansible_facts['hostname'] }}.lan;
+
+    error_log  /var/log/nginx/{{ service_name }}.{{ ansible_facts['hostname'] }}.lan.error.log;
+    access_log /var/log/nginx/{{ service_name }}.{{ ansible_facts['hostname'] }}.lan.access.log;
+
+    client_max_body_size 500M;
 
     location / {
         proxy_set_header Host $host;
