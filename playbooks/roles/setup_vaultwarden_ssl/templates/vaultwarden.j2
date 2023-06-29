@@ -1,0 +1,57 @@
+server {
+    server_name {{ setup_vaultwarden_ssl_site_url }} www.{{ setup_vaultwarden_ssl_site_url }};
+
+    error_log  /var/log/nginx/{{ setup_vaultwarden_ssl_site_url }}.error.log;
+    access_log /var/log/nginx/{{ setup_vaultwarden_ssl_site_url }}.access.log;
+
+    listen [{{ setup_vaultwarden_ssl_host_ip.v6 }}]:443 ssl http2;
+
+    ssl_certificate /etc/letsencrypt/live/{{ setup_vaultwarden_ssl_site_url }}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{ setup_vaultwarden_ssl_site_url }}/privkey.pem;
+
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+
+    client_max_body_size 500M;
+
+    location /robots.txt {
+        rewrite ^/(.*)  $1;
+        return 200 "User-agent: *\nDisallow: /";
+    }
+
+    location /admin {
+        deny all;
+    }
+
+    location /notifications/hub {
+        proxy_set_header Host $host;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_pass http://{{ setup_vaultwarden_ssl_ws_proxy_url }};
+    }
+
+    location / {
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_pass http://{{ setup_vaultwarden_ssl_proxy_url }};
+    }   
+}
+
+server {
+    listen [{{ setup_vaultwarden_ssl_host_ip.v6 }}]:80;
+    listen {{ setup_vaultwarden_ssl_host_ip.v4 }}:80;
+
+    server_name {{ setup_vaultwarden_ssl_local_url }} www.{{ setup_vaultwarden_ssl_local_url }};
+
+    error_log  /var/log/nginx/{{ setup_vaultwarden_ssl_local_url }}.error.log;
+    access_log /var/log/nginx/{{ setup_vaultwarden_ssl_local_url }}.access.log;
+
+    client_max_body_size 500M;
+
+    location / {
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_pass http://{{ setup_vaultwarden_ssl_proxy_url }};
+    }   
+}

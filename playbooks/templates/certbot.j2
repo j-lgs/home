@@ -1,0 +1,16 @@
+server {
+    listen [{{ public_ip6 }}]:80;
+    listen {{ public_ip }}:80;
+
+    server_name {{ service_name }}.home.trash-hosting.com www.{{ service_name }}.home.trash-hosting.com;
+
+    client_max_body_size 500M;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/acme;
+    }
+
+    location / {
+        return 404
+    }
+}

@@ -1,0 +1,12 @@
+---
+- name: Configure sites
+  ansible.builtin.template:
+    src: lan_site.j2
+    dest: "/etc/nginx/sites-enabled/{{ item.key }}"
+    mode: "0600"
+  vars:
+    local_simple_site_service_url: "{{ item.key }}.{{ ansible_facts['hostname'] }}.lan"
+    local_simple_site_proxy_url: "{{ item.value.host }}:{{ item.value.port }}"
+  loop: "{{ local_simple_site_services | dict2items }}"
+  notify:
+    - Restart nginx

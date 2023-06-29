@@ -1,0 +1,35 @@
+---
+- name: Get default site certificate
+  ansible.builtin.command: '/usr/bin/certbot -n --nginx certonly -d {{ https_simple_site_net_host }}'
+  args:
+    creates: '/etc/letsencrypt/live/{{ https_simple_site_net_host }}'
+  tags: nginx, certbot
+
+- name: Configure default site
+  ansible.builtin.template:
+    src: default.j2
+    dest: "/etc/nginx/sites-enabled/default"
+    mode: "0600"
+  notify:
+    - Restart nginx
+  tags: nginx
+
+- name: Get https site certificate
+  ansible.builtin.command: '/usr/bin/certbot -n --nginx certonly -d {{ item.key }}.{{ https_simple_site_net_host }}'
+  args:
+    creates: '/etc/letsencrypt/live/{{ item.key }}.{{ https_simple_site_net_host }}'
+  loop: "{{ https_simple_site_services | dict2items }}"
+  tags: nginx, certbot
+
+- name: Configure https sites
+  ansible.builtin.template:
+    src: net_site.j2
+    dest: "/etc/nginx/sites-enabled/ssl-{{ item.key }}"
+    mode: "0600"
+  vars:
+    https_simple_site_url: "{{ item.key }}.{{ https_simple_site_net_host }}"
+    https_simple_site_proxy_url: "{{ item.value.host }}:{{ item.value.port }}"
+  loop: "{{ remote_services | dict2items }}"
+  notify:
+    - Restart nginx
+  tags: nginx

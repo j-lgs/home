@@ -1,0 +1,10 @@
+samba_workgroup: WORKGROUP
+shares:
+  - comment: Torrent inbox directory
+    path: /mnt/download/inbox
+  - comment: Anime archive directory
+    path: /mnt/media/anime
+  - comment: movie archive directory
+    path: /mnt/media/movie
+  - comment: TV archive directory
+    path: /mnt/media/tv

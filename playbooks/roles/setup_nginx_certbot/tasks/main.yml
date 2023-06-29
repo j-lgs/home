@@ -1,0 +1,35 @@
+---
+- name: Install nginx
+  ansible.builtin.apt:
+    pkg:
+      - nginx
+      - certbot
+      - python3-certbot-nginx
+      - ca-certificates
+      - apache2-utils
+
+- name: Setup certbot
+  ansible.builtin.shell: |
+    certbot -n register --agree-tos --email {{ setup_nginx_certbot_email }}
+    touch /etc/letsencrypt/.registered
+  args:
+    creates: /etc/letsencrypt/.registered
+  tags: nginx, certbot
+
+- name: Create letsencrypt directories
+  ansible.builtin.file:
+    path: "/etc/letsencrypt/{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: u=rwx,g=x,o=x
+  loop:
+    - live
+
+- name: Create renewal job for certbot
+  ansible.builtin.cron:
+    name: certbot-renewal
+    job: "/bin/bash -lc '/usr/bin/certbot -q renew'"
+    minute: "0"
+    hour: "14"
+  tags: nginx, certbot

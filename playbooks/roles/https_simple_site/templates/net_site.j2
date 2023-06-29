@@ -1,0 +1,28 @@
+server {
+    server_name {{ https_simple_site_url }} www.{{ https_simple_site_url }};
+
+    error_log  /var/log/nginx/{{ https_simple_site_url }}.error.log;
+    access_log /var/log/nginx/{{ https_simple_site_url }}.access.log;
+
+    listen {{ https_simple_site_host_ip.v4 }}:443 ssl http2;
+    listen [{{ https_simple_site_host_ip.v6 }}]:443 ssl http2;
+
+    ssl_certificate /etc/letsencrypt/live/{{ https_simple_site_url }}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{ https_simple_site_url }}/privkey.pem;
+
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+
+    client_max_body_size 500M;
+
+    location /robots.txt {
+        rewrite ^/(.*)  $1;
+        return 200 "User-agent: *\nDisallow: /";
+    }
+
+    location / {
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_pass http://{{ https_simple_site_proxy_url }};
+    }   
+}

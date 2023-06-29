@@ -4,140 +4,65 @@
   vars:
     net_host: "trash-hosting.com"
   tasks:
-    - name: Install nginx
-      ansible.builtin.apt:
-        pkg:
-          - nginx
-          - certbot
-          - python3-certbot-nginx
-          - ca-certificates
-
-    - name: Setup certbot
-      ansible.builtin.shell: |
-        certbot -n register --agree-tos --email {{ le_email }}
-        touch /etc/letsencrypt/.registered
-      args:
-        creates: /etc/letsencrypt/.registered
-      tags: nginx, certbot
-
-    #- name: Install options-ssl-nginx.conf
-    #  debug: a
-
-    - name: Create letsencrypt directories
-      ansible.builtin.file:
-        path: "/etc/letsencrypt/{{ item }}"
-        state: directory
-        owner: root
-        group: root
-        mode: u=rwx,g=x,o=x
-      loop:
-        - live
-
-    - name: Create renewal job for certbot
-      ansible.builtin.cron:
-        name: certbot-renewal
-        job: "/bin/bash -lc '/usr/bin/certbot -q renew'"
-        minute: "0"
-        hour: "14"
-      tags: nginx, certbot
-
-    - name: Configure sites
-      ansible.builtin.template:
-        src: lan_site.j2
-        dest: "/etc/nginx/sites-enabled/{{ item.key }}"
-        mode: "0600"
+    - name: Setup reverse proxy and SSL termination
+      ansible.builtin.include_role:
+        name: setup_nginx_certbot
       vars:
-        public_ip6: "2404:e80:6423:1000::1000:601"
-        public_ip: "10.0.0.20"
-        service_name: "{{ item.key }}"
-        proxy_host: "{{ item.value.host }}"
-        proxy_port: "{{ item.value.port }}"
-        custom_server_conf: ""
-      loop: "{{ services | dict2items }}"
-      notify:
-        - Restart nginx
+        setup_nginx_certbot_email: "{{ le_email }}"
+
+    - name: Configure LAN sites
+      ansible.builtin.include_role:
+        name: local_simple_site
       tags: nginx
+      vars:
+        local_simple_site_host_ip:
+          v4: "10.0.0.20"
+          v6: "2404:e80:6423:1000::1000:601"
+        local_simple_site_services:
+          lanragi_artbooks:
+            host: "oni.lan"
+            port: 8000
+          homeassistant:
+            host: "oni.lan"
+            port: 8001
+          shoko:
+            host: "oni.lan"
+            port: 8004
+          betanin:
+            host: "oni.lan"
+            port: 8005
+          komga:
+            host: "oni.lan"
+            port: 8006
+          kanboard:
+            host: "oni.lan"
+            port: 8008
 
-    - name: Stop nginx
-      ansible.builtin.service:
-        name: nginx
-        state: stopped
+    # TODO: Public IPv4 is broken due to ISP CGNAT. Next step is to use wireguard on this server to connect to a VPS.
+    # An alternative is cloudflare tunneling.
+    - name: Configure HTTPs publically exposed sites
+      ansible.builtin.include_role:
+        name: https_simple_site
+      tags: nginx
+      vars:
+        https_simple_site_host_ip:
+          v4: "10.0.0.20"
+          v6: "2404:e80:6423:1000::1000:601"
+        https_simple_site_net_host: "{{ net_host }}"
+        https_simple_site_services:
+          kanboard:
+            host: "oni.lan"
+            port: 8008
 
-    - name: Get https site certificate
-      ansible.builtin.command: '/usr/bin/certbot -n --nginx certonly -d {{ item.key }}.{{ net_host }}'
-      args:
-        creates: '/etc/letsencrypt/live/{{ item.key }}.{{ net_host }}'
-      loop: "{{ remote_services | dict2items }}"
-      tags: nginx, certbot
-
-    - name: Configure nginx sites
-      block:
-        - name: Configure https sites
-          ansible.builtin.template:
-            src: net_site.j2
-            dest: "/etc/nginx/sites-enabled/ssl-{{ item.key }}"
-            mode: "0600"
-          vars:
-            public_ip6: "2404:e80:6423:1000::1000:601"
-            public_ip: "10.0.0.25"
-            service_name: "{{ item.key }}"
-            proxy_host: "{{ item.value.host }}"
-            proxy_port: "{{ item.value.port }}"
-            host: "{{ net_host }}"
-          loop: "{{ remote_services | dict2items }}"
-          notify:
-            - Restart nginx
-          tags: nginx
-
-        - name: Configure default site
-          ansible.builtin.template:
-            src: default.j2
-            dest: "/etc/nginx/sites-enabled/default"
-            mode: "0600"
-          vars:
-            public_ip6: "2404:e80:6423:1000::1000:601"
-            public_ip: "0.0.0.0"
-            host: "{{ net_host }}"
-          notify:
-            - Restart nginx
-          tags: nginx
-
-    - name: Get vaultwarden https site certificate
-      ansible.builtin.command: '/usr/bin/certbot -n --nginx certonly -d passwords.{{ net_host }}'
-      args:
-        creates: '/etc/letsencrypt/live/passwords.{{ net_host }}'
-      tags: nginx, certbot, vaultwarden
-
-    - name: Configure vaultwarden
-      block:
-  #      - name: Create vaultwarden htpasswd
-  #        ansible.builtin.command:
-  #          htpasswd -b -c "{{ vaultwarden.htpasswd }}" admin "{{ vw_admin_basic_pass }}"
-  #        args:
-  #          creates: "{{ vw_admin_basic_pass }}"
-  #        notify:
-  #          - Restart nginx
-
-        - name: Configure https sites
-          ansible.builtin.template:
-            src: vaultwarden.j2
-            dest: "/etc/nginx/sites-enabled/ssl-vaultwarden"
-            mode: "0600"
-          vars:
-            public_ip6: "2404:e80:6423:1000::1000:601"
-            public_ip: "10.0.0.20"
-            service_name: "passwords"
-            proxy_host: "{{ vaultwarden.host }}"
-            proxy_port: "{{ vaultwarden.port }}"
-            vw_ws_port: "{{ vaultwarden.ws_port }}"
-            vw_htpasswd: "{{ vaultwarden.htpasswd }}"
-            host: "{{ net_host }}"
-          notify:
-            - Restart nginx
-          tags: nginx, vaultwarden
-
-  handlers:
-    - name: Restart nginx
-      ansible.builtin.service:
-        name: nginx
-        state: restarted
+    - name: Setup vaultwarden reverse proxy
+      ansible.builtin.include_role:
+        name: setup_vaultwarden_ssl
+      tags: nginx, vaultwarden
+      vars:
+        setup_vaultwarden_ssl_host_ip:
+          v4: "10.0.0.20"
+          v6: "2404:e80:6423:1000::1000:601"
+        setup_vaultwarden_ssl_net_host: "{{ net_host }}"
+        setup_vaultwarden_ssl_service_host: "oni.lan"
+        setup_vaultwarden_ssl_service_http: 8007
+        setup_vaultwarden_ssl_service_ws: 3012

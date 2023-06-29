@@ -1,0 +1,19 @@
+server {
+    listen {{ https_simple_site_host_ip.v4 }}:80 default_server;
+    listen [{{  https_simple_site_host_ip.v6 }}]:80 default_server;
+
+    listen {{ https_simple_site_host_ip.v4 }}:443 default_server ssl http2;
+    listen [{{  https_simple_site_host_ip.v6 }}]:443 default_server ssl http2;
+
+    error_log  /var/log/nginx/{{ https_simple_site_net_host }}.error.log;
+    access_log /var/log/nginx/{{ https_simple_site_net_host }}.access.log;
+
+    ssl_certificate /etc/letsencrypt/live/{{ https_simple_site_net_host }}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{ https_simple_site_net_host }}/privkey.pem;
+
+    server_name www.{{ https_simple_site_net_host }} {{ https_simple_site_net_host }};
+
+    location / {
+        root /var/www/html;
+    }
+}
