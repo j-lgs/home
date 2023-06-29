@@ -142,8 +142,6 @@
               - "{{ services.shoko.port }}:8111"
             env:
               TZ: "{{ timezone }}"
-              PUID: "{{ file_uid | int }}"
-              PGID: "{{ file_gid | int }}"
               AVDUMP_MONO: "true"
             mounts:
               - source: config-shoko
