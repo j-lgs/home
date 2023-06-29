@@ -2,38 +2,12 @@
   hosts: oni
   roles:
     - common
+    - setup_docker
   vars:
     gitlab_ssh: 2222
     gitlab_url: "https://gitlab.trash-hosting.com"
-
     timezone: "Australia/Melbourne"
   tasks:
-    - name: Setup docker repo, install https certificates
-      ansible.builtin.apt:
-        pkg:
-          - ca-certificates
-          - curl
-          - gnupg
-    - name: Add docker apt key
-      block:
-        - name: Docker | Add key
-          ansible.builtin.apt_key:
-            id: 8D81803C0EBFCD88
-            file: https://download.docker.com/linux/debian/gpg
-            state: present
-        - name: Docker | Add repository
-          ansible.builtin.apt_repository:
-            repo: "deb https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable"
-            state: present
-    - name: Install Docker
-      ansible.builtin.apt:
-        update_cache: true
-        pkg:
-          - docker-ce
-          - docker-ce-cli
-          - containerd.io
-          - docker-buildx-plugin
-          - docker-compose-plugin
     - name: Spin up docker containers
       block:
       # TODO: Create data volumes in a loop
@@ -55,6 +29,7 @@
             - "config-komga"
             - "config-kanboard"
           tags: container, volumes
+
         - name: Set correct permissions in container volumes
           community.docker.docker_container:
             name: set-volume-{{ item.name }}-permissions
@@ -68,6 +43,7 @@
             - { name: "thumbnails-lanragi", dir: "/home/koyomi/lanraragi/thumbnails" }
             - { name: "config-komga", dir: "/config"}
           tags: container, volumes
+
         - name: Create home assistant docker container
           community.docker.docker_container:
             name: homeassistant
@@ -83,6 +59,7 @@
               - source: config-homeassistant
                 target: /configs
           tags: container,homeassistant
+
         - name: Create lanragi docker container
           community.docker.docker_container:
             name: lanragi-artbooks
@@ -106,6 +83,7 @@
               - source: thumbnails-lanragi
                 target: /home/koyomi/lanraragi/thumbnails
           tags: container, lanragi
+
         - name: Create betanin docker container
           community.docker.docker_container:
             name: betanin
@@ -133,6 +111,7 @@
                 source: /mnt/media/music
                 target: /music
           tags: container, betanin
+
         - name: Create komga docker container
           community.docker.docker_container:
             name: komga
@@ -152,6 +131,7 @@
                 source: /mnt/download/inbox/manga
                 target: /data
           tags: container, komga
+
         - name: Create shokoanime docker container
           community.docker.docker_container:
             name: shokoserver
@@ -173,6 +153,7 @@
                 source: /mnt/download/inbox/anime
                 target: /mnt/download/inbox/anime
           tags: container, shoko
+
         - name: Create vaultwarden docker container
           community.docker.docker_container:
             name: vaultwarden
@@ -192,6 +173,7 @@
               - source: config-vaultwarden
                 target: /data
           tags: container,vaultwarden
+
         - name: Create kanboard docker container
           community.docker.docker_container:
             name: kanboard

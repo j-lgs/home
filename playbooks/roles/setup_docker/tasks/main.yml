@@ -1,0 +1,34 @@
+---
+- name: Install utilities
+  ansible.builtin.apt:
+    pkg:
+      - ca-certificates
+      - curl
+      - gnupg
+  tags: setup_docker
+
+- name: Add docker apt key
+  block:
+    - name: Add key
+      ansible.builtin.apt_key:
+        id: "{{ setup_docker_current_apt_key_id }}"
+        file: https://download.docker.com/linux/debian/gpg
+        state: present
+      tags: setup_docker
+
+    - name: Add repository
+      ansible.builtin.apt_repository:
+        repo: "deb https://download.docker.com/linux/debian {{ ansible_distribution_release }} {{ setup_docker_current_debian_version }}"
+        state: present
+      tags: setup_docker
+
+- name: Install Docker
+  ansible.builtin.apt:
+    update_cache: true
+    pkg:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+  tags: setup_docker
