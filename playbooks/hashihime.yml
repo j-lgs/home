@@ -1,0 +1,13 @@
+- name: Playbook for the Jellyfin GPU server (hashihime)
+  hosts: hashihime
+  roles:
+    - common
+    - setup_jellyfin
+  tasks:
+    - name: Configure Nvidia drivers
+      ansible.builtin.include_role:
+        name: setup_nvidia_drivers
+      tags: nvidia
+      vars:
+        setup_nvidia_drivers_version: "530.41.03"
+    

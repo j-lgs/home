@@ -1,0 +1,44 @@
+---
+- name: Download driver
+  ansible.builtin.get_url:
+    url: "https://us.download.nvidia.com/XFree86/Linux-x86_64/{{ setup_nvidia_drivers_version }}/NVIDIA-Linux-x86_64-{{ setup_nvidia_drivers_version }}.run"
+    dest: /tmp/NVIDIA-Linux-x86_64-{{ setup_nvidia_drivers_version }}.run
+    mode: 0550
+
+- name: Get build deps
+  apt:
+    pkg:
+    - build-essential
+    - software-properties-common
+
+- name: Get kernel headers (Proxmox)
+  apt:
+    pkg:
+      - pve-headers
+      - pve-headers-{{ ansible_facts['kernel'] }}
+  when: role == "proxmox_host"
+
+- name: Get kernel headers (Container)
+  apt: 
+    pkg: linux-headers-amd64
+  when: ansible_facts['distribution'] == "Debian" and role == "lxc_container"
+
+- name: Install the driver (Proxmox)
+  command:
+    cmd: /tmp/NVIDIA-Linux-x86_64-{{ setup_nvidia_drivers_version }}.run --dkms --no-drm --no-wine-files --disable-nouveau -s
+    creates: /lib/modules/{{ ansible_facts['kernel'] }}/kernel/drivers/video/nvidia.ko
+  when: role == "proxmox_host"
+
+- name: Install nvidia udev rules (Proxmox)
+  copy:
+    src: 70-nvidia.rules
+    dest: /etc/udev/rules.d/70-nvidia.rules
+    mode: 0660
+  when: role == "proxmox_host"
+
+- name: Install the driver (Container)
+  command:
+    cmd: >
+      /tmp/NVIDIA-Linux-x86_64-{{ setup_nvidia_drivers_version }}.run --no-kernel-module --no-wine-files --disable-nouveau -s && touch /root/.nvidia-{{ setup_nvidia_drivers_version }}
+    creates: /root/.nvidia-{{ setup_nvidia_drivers_version }}
+  when: ansible_facts['distribution'] == "Debian" and role == "lxc_container"

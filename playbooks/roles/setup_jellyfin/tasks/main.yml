@@ -1,0 +1,54 @@
+---
+- name: Install utilities
+  ansible.builtin.apt:
+    pkg:
+      - ca-certificates
+      - curl
+      - gnupg
+  tags: setup_jellyfin
+
+- name: Add jellyfin repo
+  block:
+    - name: Add key
+      ansible.builtin.get_url:
+        url: "https://repo.jellyfin.org/jellyfin_team.gpg.key"
+        dest: /etc/apt/trusted.gpg.d/jellyfin.asc
+        mode: '0644'
+        force: true
+      tags: setup_jellyfin
+
+    - name: Add repository
+      ansible.builtin.apt_repository:
+        repo: "deb https://repo.jellyfin.org/debian {{ ansible_distribution_release }} {{ setup_jellyfin_current_jellyfin_version }}"
+        state: present
+      tags: setup_jellyfin
+
+- name: Install jellyfin
+  ansible.builtin.apt:
+    update_cache: true
+    pkg:
+      - jellyfin
+  tags: setup_jellyfin
+
+- name: Enable and start jellyfin
+  ansible.builtin.service:
+    name: jellyfin
+    enabled: true
+    state: started
+  tags: setup_jellyfin
+
+- name: Correct ownership of jellyfin directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    recurse: yes
+    owner: jellyfin
+    group: jellyfin
+  tags: setup_jellyfin
+  loop:
+    - /var/cache/jellyfin
+    - /var/lib/jellyfin/transcodes
+
+# chown jellyfin:jellyfin /var/cache/jellyfin
+
+# chown jellyfin:jellyfin /var/lib/jellyfin/transcodes

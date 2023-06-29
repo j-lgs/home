@@ -1,42 +1,52 @@
-- Name: Playbook for configuring Proxmox host (chireiden) with correct setting for its LXC containers
+- name: Playbook for configuring Proxmox host (chireiden) with correct setting for its LXC containers
   hosts: chireiden
   tasks:
-  - name: Configure file access idmaps in LXC configuration
-    ansible.builtin.include_role:
-      name: configure-lxc
-    tags: lxc
-    vars:
-      lxc_hosts: [
-        "yatagarasu",
-        "oni",
-        "hashihime"
-      ]
+    - name: Configure Nvidia drivers
+      ansible.builtin.include_role:
+        name: setup_nvidia_drivers
+      tags: nvidia
+      vars:
+        setup_nvidia_drivers_version: "530.41.03"
 
-      # HACK: UIDs can only be four digit, and GIDs five. idmap configuration generation is really intended to be in a plugin.
-      # TODO: Move UID generation into a plugin. The arithmetic is straightforward but the text formatting would be very ugly
-      # if done in the playbook.
-      lxc_lines: [
-        "lxc.idmap: u 0 100000 {{ file_uid }}",
-        "lxc.idmap: g 0 100000 {{ file_gid }}",
-        "lxc.idmap: u {{ file_uid }} {{ file_uid }} 1",
-        "lxc.idmap: g {{ file_gid }} {{ file_gid }} 1",
-        "lxc.idmap: u {{ file_uid + 1 }} 10{{ file_uid + 1 }} {{ 65535 - file_uid }}",
-        "lxc.idmap: g {{ file_gid + 1 }} 100{{ file_gid + 1 }} {{ 65535 - file_gid }}"
-      ]
+    - name: Configure file access idmaps in LXC configuration
+      ansible.builtin.include_role:
+        name: configure-lxc
+      tags: lxc
+      vars:
+        lxc_hosts: [
+          "yatagarasu",
+          "oni",
+          "hashihime"
+        ]
 
-  - name: Configure GPU access LXC configuration
-    ansible.builtin.include_role:
-      name: configure-lxc
-    tags: lxc, gpu
-    vars:
-      lxc_hosts: [
-        "hashihime"
-      ]
-      lxc_lines: [
-        "lxc.cgroup2.devices.allow: c 195:* rwm",
-        "lxc.cgroup2.devices.allow: c 507:* rwm",
-        "lxc.mount.entry: /dev/nvidia0 dev/nvidia0 none bind,optional,create=file",
-        "lxc.mount.entry: /dev/nvidiactl dev/nvidiactl none bind,optional,create=file",
-        "lxc.mount.entry: /dev/nvidia-modeset dev/nvidia-modeset none bind,optional,create=file",
-        "lxc.mount.entry: /dev/nvidia-uvm dev/nvidia-uvm none bind,optional,create=file"
-      ]
+        # HACK: UIDs can only be four digit, and GIDs five. idmap configuration generation is really intended to be in a plugin.
+        # TODO: Move UID generation into a plugin. The arithmetic is straightforward but the text formatting would be very ugly
+        # if done in the playbook.
+        lxc_lines: [
+          "lxc.idmap: u 0 100000 {{ file_uid }}",
+          "lxc.idmap: g 0 100000 {{ file_gid }}",
+          "lxc.idmap: u {{ file_uid }} {{ file_uid }} 1",
+          "lxc.idmap: g {{ file_gid }} {{ file_gid }} 1",
+          "lxc.idmap: u {{ file_uid + 1 }} 10{{ file_uid + 1 }} {{ 65535 - file_uid }}",
+          "lxc.idmap: g {{ file_gid + 1 }} 100{{ file_gid + 1 }} {{ 65535 - file_gid }}"
+        ]
+
+    - name: Configure GPU access LXC configuration
+      ansible.builtin.include_role:
+        name: configure-lxc
+      tags: lxc, gpu
+      vars:
+        lxc_hosts: [
+          "hashihime"
+        ]
+        lxc_lines: [
+          "lxc.cgroup2.devices.allow: c 195:* rwm",
+          "lxc.cgroup2.devices.allow: c 507:* rwm",
+          "lxc.cgroup2.devices.allow: c 510:* rwm",
+          "lxc.mount.entry: /dev/nvidia0 dev/nvidia0 none bind,optional,create=file",
+          "lxc.mount.entry: /dev/nvidiactl dev/nvidiactl none bind,optional,create=file",
+          "lxc.mount.entry: /dev/nvidia-uvm dev/nvidia-uvm none bind,optional,create=file",
+          "lxc.mount.entry: /dev/nvidia-uvm-tools dev/nvidia-uvm-tools none bind,optional,create=file",
+          "lxc.mount.entry: /dev/nvidia-uvm-tools dev/nvidia-caps/nvidia-cap1 none bind,optional,create=file",
+          "lxc.mount.entry: /dev/nvidia-uvm-tools dev/nvidia-caps/nvidia-cap2 none bind,optional,create=file"
+        ]
