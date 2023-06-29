@@ -1,5 +1,4 @@
 ---
-ansible_user: root
 services:
   lanragi_artbooks:
     host: "oni.lan"
@@ -19,6 +18,7 @@ services:
   kanboard:
     host: "oni.lan"
     port: 8008
+  
 remote_services:
   kanboard:
     host: "oni.lan"
@@ -28,4 +28,3 @@ vaultwarden:
   host: "oni.lan"
   port: 8007
   ws_port: 3012
-  htpasswd: "/root/.vaultwarden-htpasswd"

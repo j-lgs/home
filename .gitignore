@@ -9,3 +9,4 @@ terraform.tfstate.backup
 .sops.yaml
 terraform-secrets.yaml
 inventory/prod
+inventory/group_vars/production/net_info.yml

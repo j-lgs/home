@@ -43,6 +43,10 @@ variable "inventory_file" {
   default = "inventory/prod"
 }
 
+variable "prod_net_info_file" {
+  default = "inventory/group_vars/production/net_info.yml"
+}
+
 locals {
   machine_ssh_keys = <<-EOT
     ${ data.sops_file.terraform_secrets.data["machine_ssh"] }
@@ -56,6 +60,36 @@ locals {
     tsukumogami = { vmid = 110, pw = data.sops_file.terraform_secrets.data["password.tsukumogami"] }
     tsuchigumo  = { vmid = 201 }
   }
+
+  machine_networks = {
+    yatagarasu  = { ip4="10.0.0.22/24", ip6="2404:e80:6423:1000::1000:604/64" }
+    oni         = { ip4="10.0.0.21/24", ip6="2404:e80:6423:1000::1000:603/64" }
+    hashihime   = { ip4="10.0.0.23/24", ip6="2404:e80:6423:1000::1000:605/64" }
+    satori      = { ip4="10.0.0.20/24", ip6="2404:e80:6423:1000::1000:601/64" }
+    tsukumogami = { ip4="10.0.0.25/24", ip6="2404:e80:6423:1000::1000:600/64" }    
+  }
+}
+
+data "template_file" "prod_net_info" {
+  template = "${file("${path.module}/templates/net_info.tpl")}"
+  count    = "${length(local.machine_networks)}"
+  vars = {
+    hostname = "${keys(local.machine_networks)[count.index]}"
+    ip4 = "${split("/", values(local.machine_networks)[count.index].ip4)[0]}"
+    ip6 = "${split("/", values(local.machine_networks)[count.index].ip6)[0]}"
+  }
+}
+
+data "template_file" "prod_net_vars" {
+  template = "${file("${path.module}/templates/vars.tpl")}"
+  vars = {
+    attributes = "${join("", data.template_file.prod_net_info.*.rendered)}"
+  }
+}
+
+resource "local_file" "global_info" {
+  content = data.template_file.prod_net_vars.rendered
+  filename = var.prod_net_info_file
 }
 
 data "template_file" "prod_hosts" {
@@ -88,6 +122,9 @@ resource "proxmox_lxc" "yatagarasu" {
   
   ostype       = "debian"
   unprivileged = true
+
+  nameserver   = var.net_dns
+  searchdomain = "lan"
 
   description = <<-EOT
     Samba fileserver for the windows network. User shares will be on AD machine tsuchigumo.
@@ -152,8 +189,10 @@ resource "proxmox_lxc" "yatagarasu" {
   network {
     name   = "eth0"
     bridge = "vmbr0"
-    ip     = "dhcp"
-    ip6    = "dhcp"
+    gw     = var.ip4_gateway
+    ip     = local.machine_networks.yatagarasu.ip4
+    gw6    = var.ip6_gateway
+    ip6    = local.machine_networks.yatagarasu.ip6
   }
 
   # Suppress changes from the buggy way Proxmox's API handles bind mounts.
@@ -234,8 +273,10 @@ resource "proxmox_lxc" "oni" {
   network {
     name   = "eth0"
     bridge = "vmbr0"
-    ip     = "dhcp"
-    ip6    = "dhcp"
+    gw     = var.ip4_gateway
+    ip     = local.machine_networks.oni.ip4
+    gw6    = var.ip6_gateway
+    ip6    = local.machine_networks.oni.ip6
   }
 
   # Suppress changes from the buggy way Proxmox's API handles bind mounts.
@@ -258,6 +299,9 @@ resource "proxmox_lxc" "hashihime" {
   
   ostype       = "debian"
   unprivileged = true
+
+  nameserver   = var.net_dns
+  searchdomain = "lan"
 
   description = <<-EOT
     Docker host jellyfin, will have gpu attached.
@@ -323,8 +367,10 @@ resource "proxmox_lxc" "hashihime" {
   network {
     name   = "eth0"
     bridge = "vmbr0"
-    ip     = "dhcp"
-    ip6    = "dhcp"
+    gw     = var.ip4_gateway
+    ip     = local.machine_networks.hashihime.ip4
+    gw6    = var.ip6_gateway
+    ip6    = local.machine_networks.hashihime.ip6
   }
 
   # Suppress changes from the buggy way Proxmox's API handles bind mounts.
@@ -379,9 +425,9 @@ resource "proxmox_lxc" "satori" {
     name   = "eth0"
     bridge = "vmbr0"
     gw     = var.ip4_gateway
-    ip     = "10.0.0.20/24"
+    ip     = local.machine_networks.satori.ip4
     gw6    = var.ip6_gateway
-    ip6    = "2404:e80:6423:1000::1000:601/64"
+    ip6    = local.machine_networks.satori.ip6
   }
 }
 
@@ -446,9 +492,9 @@ resource "proxmox_lxc" "tsukumogami" {
     name   = "eth0"
     bridge = "vmbr0"
     gw     = var.ip4_gateway
-    ip     = "10.0.0.25/24"
+    ip     = local.machine_networks.tsukumogami.ip4
     gw6    = var.ip6_gateway
-    ip6    = "2404:e80:6423:1000::1000:600/64"
+    ip6    = local.machine_networks.tsukumogami.ip6
   }
 
   # Suppress changes from the buggy way Proxmox's API handles bind mounts.

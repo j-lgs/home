@@ -16,27 +16,9 @@
       tags: nginx
       vars:
         local_simple_site_host_ip:
-          v4: "10.0.0.20"
-          v6: "2404:e80:6423:1000::1000:601"
-        local_simple_site_services:
-          lanragi_artbooks:
-            host: "oni.lan"
-            port: 8000
-          homeassistant:
-            host: "oni.lan"
-            port: 8001
-          shoko:
-            host: "oni.lan"
-            port: 8004
-          betanin:
-            host: "oni.lan"
-            port: 8005
-          komga:
-            host: "oni.lan"
-            port: 8006
-          kanboard:
-            host: "oni.lan"
-            port: 8008
+          v4: "{{ satori.ip4 }}"
+          v6: "{{ satori.ip6 }}"
+        local_simple_site_services: "{{ services }}"
 
     # TODO: Public IPv4 is broken due to ISP CGNAT. Next step is to use wireguard on this server to connect to a VPS.
     # An alternative is cloudflare tunneling.
@@ -46,13 +28,10 @@
       tags: nginx
       vars:
         https_simple_site_host_ip:
-          v4: "10.0.0.20"
-          v6: "2404:e80:6423:1000::1000:601"
+          v4: "{{ satori.ip4 }}"
+          v6: "{{ satori.ip6 }}"
         https_simple_site_net_host: "{{ net_host }}"
-        https_simple_site_services:
-          kanboard:
-            host: "oni.lan"
-            port: 8008
+        https_simple_site_services: "{{ remote_services }}"
 
     - name: Setup vaultwarden reverse proxy
       ansible.builtin.include_role:
@@ -60,9 +39,9 @@
       tags: nginx, vaultwarden
       vars:
         setup_vaultwarden_ssl_host_ip:
-          v4: "10.0.0.20"
-          v6: "2404:e80:6423:1000::1000:601"
+          v4: "{{ satori.ip4 }}"
+          v6: "{{ satori.ip6 }}"
         setup_vaultwarden_ssl_net_host: "{{ net_host }}"
-        setup_vaultwarden_ssl_service_host: "oni.lan"
-        setup_vaultwarden_ssl_service_http: 8007
-        setup_vaultwarden_ssl_service_ws: 3012
+        setup_vaultwarden_ssl_service_host: "{{ vaultwarden.host }}"
+        setup_vaultwarden_ssl_service_http: "{{ vaultwarden.port }}"
+        setup_vaultwarden_ssl_service_ws: "{{ vaultwarden.ws_port }}"
