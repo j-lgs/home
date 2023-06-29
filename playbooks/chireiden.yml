@@ -2,7 +2,7 @@
   hosts: chireiden
   tasks:
   - name: Configure file access idmaps in LXC configuration
-    include_role:
+    ansible.builtin.include_role:
       name: configure-lxc
     tags: lxc
     vars:
@@ -25,7 +25,7 @@
       ]
 
   - name: Configure GPU access LXC configuration
-    include_role:
+    ansible.builtin.include_role:
       name: configure-lxc
     tags: lxc, gpu
     vars:
