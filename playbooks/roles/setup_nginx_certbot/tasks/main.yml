@@ -7,6 +7,7 @@
       - python3-certbot-nginx
       - ca-certificates
       - apache2-utils
+  tags: setup_nginx_certbot
 
 - name: Setup certbot
   ansible.builtin.shell: |
@@ -14,7 +15,7 @@
     touch /etc/letsencrypt/.registered
   args:
     creates: /etc/letsencrypt/.registered
-  tags: nginx, certbot
+  tags: setup_nginx_certbot, certbot
 
 - name: Create letsencrypt directories
   ansible.builtin.file:
@@ -25,6 +26,7 @@
     mode: u=rwx,g=x,o=x
   loop:
     - live
+  tags: setup_nginx_certbot, certbot
 
 - name: Create renewal job for certbot
   ansible.builtin.cron:
@@ -32,4 +34,4 @@
     job: "/bin/bash -lc '/usr/bin/certbot -q renew'"
     minute: "0"
     hour: "14"
-  tags: nginx, certbot
+  tags: setup_nginx_certbot, certbot
