@@ -75,7 +75,7 @@
           community.docker.docker_container:
             name: homeassistant
             hostname: homeassistant
-            image: homeassistant/home-assistant:stable
+            image: "homeassistant/home-assistant:{{ services.homeassistant.version }}"
             state: started
             recreate: true
             ports:
