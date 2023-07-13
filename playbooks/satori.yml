@@ -9,6 +9,7 @@
         name: setup_nginx_certbot
       vars:
         setup_nginx_certbot_email: "{{ le_email }}"
+      tags: setup_nginx_certbot
 
     - name: Configure LAN sites
       ansible.builtin.include_role:
