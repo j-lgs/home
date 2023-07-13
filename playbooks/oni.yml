@@ -28,6 +28,7 @@
             - "database-betanin"
             - "config-komga"
             - "config-kanboard"
+            - "nextcloud_aio_mastercontainer"
           tags: container, volumes
 
         - name: Set correct permissions in container volumes
@@ -43,6 +44,32 @@
             - { name: "thumbnails-lanragi", dir: "/home/koyomi/lanraragi/thumbnails" }
             - { name: "config-komga", dir: "/config"}
           tags: container, volumes
+
+        - name: Create nextcloud-aio docker container
+          community.docker.docker_container:
+            name: nextcloud-aio-mastercontainer
+            hostname: nextcloud
+            image: nextcloud/all-in-one:{{ nextcloud.version }}
+            state: started
+            recreate: true
+            ports:
+ #             - "{{ nextcloud.http_certificates_port }}:80"
+              - "{{ nextcloud.aio_interface_port }}:8080"
+#              - "{{ nextcloud.https }}:8443"
+#              - "{{ nextcloud.http }}:11000"
+            env:
+              TZ: "{{ timezone }}"
+              APACHE_PORT: "11000"
+              APACHE_IP_BINDING: "0.0.0.0"
+              SKIP_DOMAIN_VALIDATION: "true"
+            mounts:
+              - source: nextcloud_aio_mastercontainer
+                target: /mnt/docker-aio-config
+              - type: bind
+                read_only: true
+                source: /var/run/docker.sock
+                target: /var/run/docker.sock
+          tags: container,nextcloud
 
         - name: Create home assistant docker container
           community.docker.docker_container:

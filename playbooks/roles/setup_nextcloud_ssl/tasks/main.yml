@@ -1,0 +1,20 @@
+---
+- name: Get nextcloud https site certificate
+  ansible.builtin.command: '/usr/bin/certbot -n --nginx certonly -d {{ setup_nextcloud_ssl_service_name }}.{{ setup_nextcloud_ssl_net_host }}'
+  args:
+    creates: '/etc/letsencrypt/live/{{ setup_nextcloud_ssl_service_name }}.{{ setup_nextcloud_ssl_net_host }}'
+  tags: nginx, certbot, nextcloud
+
+- name: Configure nextcloud https site
+  ansible.builtin.template:
+    src: nextcloud.j2
+    dest: "/etc/nginx/sites-enabled/ssl-nextcloud"
+    mode: "0600"
+  vars:
+    setup_nextcloud_ssl_site_url: "{{ setup_nextcloud_ssl_service_name }}.{{ setup_nextcloud_ssl_net_host }}"
+    setup_nextcloud_ssl_local_url: "{{ setup_nextcloud_ssl_service_name }}.{{ ansible_facts['hostname'] }}.lan"
+    setup_nextcloud_ssl_proxy_url: "{{ setup_nextcloud_ssl_service_host }}:{{ setup_nextcloud_ssl_service_http }}"
+
+  notify:
+    - Restart nginx
+  tags: nginx, nextcloud

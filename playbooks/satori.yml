@@ -66,3 +66,15 @@
         setup_vaultwarden_ssl_service_host: "{{ vaultwarden.host }}"
         setup_vaultwarden_ssl_service_http: "{{ vaultwarden.port }}"
         setup_vaultwarden_ssl_service_ws: "{{ vaultwarden.ws_port }}"
+
+    - name: Setup nextcloud reverse proxy
+      ansible.builtin.include_role:
+        name: setup_nextcloud_ssl
+      tags: nginx, nextcloud
+      vars:
+        setup_nextcloud_ssl_host_ip:
+          v4: "{{ satori.ip4 }}"
+          v6: "{{ satori.ip6 }}"
+        setup_nextcloud_ssl_net_host: "{{ net_host }}"
+        setup_nextcloud_ssl_service_host: "{{ nextcloud.host }}"
+        setup_nextcloud_ssl_service_http: "{{ nextcloud.http }}"

@@ -175,3 +175,9 @@ vaultwarden:
   port: 8007
   ws_port: 3012
   version: "1.29.0"
+
+nextcloud:
+  host: "{{ oni.ip4 }}"
+  aio_interface_port: 8011
+  http: 11000
+  version: "latest"
