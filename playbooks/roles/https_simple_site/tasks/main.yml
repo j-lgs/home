@@ -27,7 +27,6 @@
     dest: "/etc/nginx/sites-enabled/ssl-{{ item.key }}"
     mode: "0600"
   vars:
-    https_simple_site_custom: "{{ https_simple_site_custom }}"
     https_simple_site_url: "{{ item.key }}.{{ https_simple_site_net_host }}"
     https_simple_site_proxy_url: "{{ item.value.host }}:{{ item.value.port }}"
   loop: "{{ https_simple_site_services | dict2items }}"
