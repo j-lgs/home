@@ -32,3 +32,12 @@
       - docker-buildx-plugin
       - docker-compose-plugin
   tags: setup_docker
+
+- name: Configure Docker
+  ansible.builtin.template:
+    src: docker.json.j2
+    dest: /etc/docker/daemon.json
+    mode: "0600"
+  notify:
+    - Restart docker
+  tags: setup_docker
