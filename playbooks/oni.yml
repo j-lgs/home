@@ -64,7 +64,7 @@
           community.docker.docker_container:
             name: lanragi-artbooks
             hostname: lanragi-artbooks
-            image: difegue/lanraragi:v.0.8.90
+            image: "difegue/lanraragi:{{ services.lanragi_artbooks.version }}"
             state: started
             recreate: true
             ports:
@@ -88,7 +88,7 @@
           community.docker.docker_container:
             name: betanin
             hostname: betanin
-            image: sentriz/betanin:v0.4.0
+            image: "sentriz/betanin:{{ services.betanin.version }}"
             state: started
             recreate: true
             ports:
@@ -115,7 +115,7 @@
         - name: Create komga docker container
           community.docker.docker_container:
             name: komga
-            image: gotson/komga:0.165.0
+            image: "gotson/komga:{{ services.komga.version }}"
             state: started
             recreate: true
             ports:
@@ -135,7 +135,7 @@
         - name: Create shokoanime docker container
           community.docker.docker_container:
             name: shokoserver
-            image: shokoanime/server:v4.2.2
+            image: "shokoanime/server:{{ services.shoko.version }}"
             state: started
             recreate: true
             ports:
@@ -155,7 +155,7 @@
         - name: Create vaultwarden docker container
           community.docker.docker_container:
             name: vaultwarden
-            image: vaultwarden/server:1.28.1
+            image: "vaultwarden/server:{{ vaultwarden.version }}"
             state: started
             recreate: true
             ports:
@@ -175,7 +175,7 @@
         - name: Create kanboard docker container
           community.docker.docker_container:
             name: kanboard
-            image: kanboard/kanboard:v1.2.30
+            image: "kanboard/kanboard:{{ services.kanboard.version }}"
             state: started
             recreate: true
             ports:

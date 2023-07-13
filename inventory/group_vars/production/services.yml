@@ -3,21 +3,27 @@ services:
   lanragi_artbooks:
     host: "oni.lan"
     port: 8000
+    version: "v.0.8.90"
   homeassistant:
     host: "oni.lan"
     port: 8001
+    version: "2023.7"
   shoko:
     host: "oni.lan"
     port: 8004
+    version: "daily"
   betanin:
     host: "oni.lan"
     port: 8005
+    version: "v0.4.0"
   komga:
     host: "oni.lan"
     port: 8006
+    version: "1.1.0"
   kanboard:
     host: "oni.lan"
     port: 8008
+    version: "v1.2.32"
   jellyfin:
     host: "hashihime.lan"
     port: 8096
@@ -160,8 +166,12 @@ remote_services:
   kanboard:
     host: "oni.lan"
     port: 8008
+  shoko:
+    host: "oni.lan"
+    port: 8004
 
 vaultwarden:
   host: "oni.lan"
   port: 8007
   ws_port: 3012
+  version: "1.29.0"
